@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradeSignal Pro — Binary Options Signal Generator</title>
+  <meta name="description" content="Professional binary options signal generator with live TradingView charts, technical analysis, and real-time trading signals for 22+ currency pairs.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="logo-icon">📊</div>
+          <div class="logo-text">
+            <h1>TradeSignal Pro</h1>
+            <span>Binary Options</span>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-search">
+        <input type="text" id="pair-search" placeholder="Search pairs..." autocomplete="off">
+      </div>
+      <div class="pairs-list" id="pairs-list">
+        <!-- Populated by JS -->
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Header -->
+      <header class="main-header">
+        <div class="header-left">
+          <span class="current-pair-name" id="current-pair-name">EUR/USD</span>
+          <span class="current-pair-badge" id="current-pair-badge">Forex</span>
+        </div>
+        <div class="header-right">
+          <div class="timeframe-selector" id="timeframe-selector">
+            <button class="tf-btn active" data-tf="1">1m</button>
+            <button class="tf-btn" data-tf="5">5m</button>
+            <button class="tf-btn" data-tf="15">15m</button>
+            <button class="tf-btn" data-tf="30">30m</button>
+            <button class="tf-btn" data-tf="60">1H</button>
+            <button class="tf-btn" data-tf="240">4H</button>
+            <button class="tf-btn" data-tf="D">1D</button>
+          </div>
+          <button class="generate-btn" id="generate-btn" onclick="generateSignal()">
+            <span class="btn-text">⚡ Generate Signal</span>
+            <div class="spinner"></div>
+          </button>
+          <button class="generate-all-btn" id="generate-all-btn" onclick="generateAllSignals()">
+            🔄 Scan All
+          </button>
+        </div>
+      </header>
+
+      <!-- Chart + Signal Panel -->
+      <div class="content-area">
+        <div class="chart-container">
+          <div id="tradingview-chart"></div>
+        </div>
+
+        <!-- Signal Panel -->
+        <aside class="signal-panel">
+          <div class="signal-tabs">
+            <div class="signal-tab active" data-tab="signal" onclick="switchTab('signal')">Signal</div>
+            <div class="signal-tab" data-tab="analysis" onclick="switchTab('analysis')">Analysis</div>
+            <div class="signal-tab" data-tab="history" onclick="switchTab('history')">History</div>
+          </div>
+          <div class="signal-content">
+            <!-- Signal Tab -->
+            <div class="tab-content active" id="tab-signal">
+              <div class="empty-signal" id="empty-signal">
+                <div class="empty-icon">📡</div>
+                <div class="empty-text">No signal generated yet</div>
+                <div class="empty-subtext">Click "Generate Signal" to analyze the current pair</div>
+              </div>
+              <div id="signal-result" style="display:none;"></div>
+            </div>
+
+            <!-- Analysis Tab -->
+            <div class="tab-content" id="tab-analysis">
+              <div class="empty-signal" id="empty-analysis">
+                <div class="empty-icon">🔬</div>
+                <div class="empty-text">No analysis data</div>
+                <div class="empty-subtext">Generate a signal to see detailed analysis</div>
+              </div>
+              <div id="analysis-result" style="display:none;"></div>
+            </div>
+
+            <!-- History Tab -->
+            <div class="tab-content" id="tab-history">
+              <div class="empty-signal" id="empty-history">
+                <div class="empty-icon">📋</div>
+                <div class="empty-text">No signals in history</div>
+                <div class="empty-subtext">Generate signals to build your history</div>
+              </div>
+              <table class="history-table" id="history-table" style="display:none;">
+                <thead>
+                  <tr>
+                    <th>Pair</th>
+                    <th>Dir</th>
+                    <th>Conf</th>
+                    <th>Time</th>
+                  </tr>
+                </thead>
+                <tbody id="history-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <!-- TradingView Widget Script -->
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
