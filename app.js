@@ -810,8 +810,11 @@ async function generateSignal() {
   const btn = document.getElementById('generate-btn');
   btn.classList.add('analyzing');
   
+  // Switch to signal view immediately so user sees the transition
+  switchView('signal');
+  
   // Simulate analysis time
-  await sleep(1500 + Math.random() * 1000);
+  await sleep(1000 + Math.random() * 500);
   
   const pair = PAIRS[currentPairIndex];
   const signal = generateCompositeSignal(pair, currentTimeframe);
@@ -828,9 +831,6 @@ async function generateSignal() {
   renderSignal(signal);
   renderAnalysis(signal);
   renderHistory();
-  
-  // Switch to signal view
-  switchView('signal');
   
   btn.classList.remove('analyzing');
 }
