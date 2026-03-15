@@ -43,7 +43,25 @@ document.addEventListener('DOMContentLoaded', () => {
   bindSearch();
 });
 
-// ===== Sidebar Pairs List =====
+// ===== Navigation =====
+function switchView(viewId) {
+  // Update nav buttons
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === viewId);
+  });
+  
+  // Update views
+  document.querySelectorAll('.app-view').forEach(view => {
+    view.classList.toggle('active', view.id === `view-${viewId}`);
+  });
+
+  // Re-init chart if switching to chart view
+  if (viewId === 'chart') {
+    setTimeout(initChart, 100);
+  }
+}
+
+// ===== Sidebar Pairs List (Mobile optimized) =====
 function renderPairsList(filter = '') {
   const container = document.getElementById('pairs-list');
   container.innerHTML = '';
@@ -52,21 +70,21 @@ function renderPairsList(filter = '') {
         !pair.full.toLowerCase().includes(filter.toLowerCase())) return;
 
     const item = document.createElement('div');
-    item.className = `pair-item${index === currentPairIndex ? ' active' : ''}`;
+    item.className = `pair-card${index === currentPairIndex ? ' active' : ''}`;
     item.dataset.index = index;
 
     const signalState = pairSignalStates[pair.symbol] || '';
     const dotClass = signalState ? ` ${signalState}` : '';
 
     item.innerHTML = `
-      <div class="pair-info">
+      <div class="pair-info-mini">
         <span class="pair-flag">${pair.flag}</span>
-        <div>
-          <span class="pair-name">${pair.name}</span>
-          <span class="pair-name-full">${pair.full}</span>
+        <div class="pair-texts">
+          <div class="pair-name">${pair.name}</div>
+          <div class="pair-full">${pair.full}</div>
         </div>
       </div>
-      <div class="pair-signal-dot${dotClass}"></div>
+      <div class="signal-dot${dotClass}"></div>
     `;
     item.addEventListener('click', () => selectPair(index));
     container.appendChild(item);
@@ -77,21 +95,15 @@ function selectPair(index) {
   currentPairIndex = index;
   const pair = PAIRS[index];
   document.getElementById('current-pair-name').textContent = pair.name;
-  document.getElementById('current-pair-badge').textContent = 'Forex';
 
-  // Update active state
-  document.querySelectorAll('.pair-item').forEach((el, i) => {
-    el.classList.toggle('active', parseInt(el.dataset.index) === index);
-  });
-
-  // Reinitialize chart
+  // Reinitialize chart and switch view
   initChart();
+  switchView('chart');
 
-  // Clear current signal display (keep history)
+  // Clear current signal display
   document.getElementById('signal-result').style.display = 'none';
-  document.getElementById('empty-signal').style.display = 'flex';
+  document.getElementById('empty-signal').style.display = 'block';
   document.getElementById('analysis-result').style.display = 'none';
-  document.getElementById('empty-analysis').style.display = 'flex';
 }
 
 function bindSearch() {
@@ -103,6 +115,7 @@ function bindSearch() {
 // ===== TradingView Chart =====
 function initChart() {
   const container = document.getElementById('tradingview-chart');
+  if (!container) return;
   container.innerHTML = '';
 
   tvWidget = new TradingView.widget({
@@ -113,22 +126,19 @@ function initChart() {
     theme: 'dark',
     style: '1',
     locale: 'en',
-    toolbar_bg: '#111827',
+    toolbar_bg: '#1e293b',
     enable_publishing: false,
-    hide_top_toolbar: false,
-    hide_legend: false,
+    hide_top_toolbar: true, // Optimized for mobile
+    hide_legend: true,
     save_image: false,
-    withdateranges: true,
+    withdateranges: false,
     allow_symbol_change: false,
     autosize: true,
     studies: [
       'RSI@tv-basicstudies',
-      'MACD@tv-basicstudies',
       'BB@tv-basicstudies'
     ],
-    details: true,
-    hotlist: false,
-    calendar: false,
+    disabled_features: ["header_widget", "left_toolbar", "footer_widget"],
   });
 }
 
@@ -819,8 +829,8 @@ async function generateSignal() {
   renderAnalysis(signal);
   renderHistory();
   
-  // Switch to signal tab
-  switchTab('signal');
+  // Switch to signal view
+  switchView('signal');
   
   btn.classList.remove('analyzing');
 }
@@ -856,77 +866,31 @@ function renderSignal(signal) {
   container.style.display = 'block';
   
   const dirClass = signal.direction === 'CALL' ? 'call' : 'put';
-  const dirIcon = signal.direction === 'CALL' ? '📈' : '📉';
-  const confClass = signal.confidence >= 75 ? 'high' : signal.confidence >= 55 ? 'medium' : 'low';
-  
-  let patternsHTML = '';
-  if (signal.patterns.length > 0) {
-    patternsHTML = `
-      <div class="patterns-section">
-        <div class="section-title">🕯️ Detected Patterns</div>
-        <div>
-          ${signal.patterns.map(p => `
-            <span class="pattern-tag ${p.type}">${p.icon} ${p.name}</span>
-          `).join('')}
-        </div>
-      </div>
-    `;
-  }
-  
-  let strategiesHTML = `
-    <div class="strategies-section">
-      <div class="section-title">📋 Strategy Analysis</div>
-      ${signal.strategies.map(s => `
-        <div class="strategy-item ${s.signal}">
-          <div class="strategy-name">${s.name}</div>
-          <div class="strategy-detail">${s.detail}</div>
-          <div class="strategy-signal ${s.signal}">
-            ${s.signal === 'bullish' ? '▲ CALL' : s.signal === 'bearish' ? '▼ PUT' : '● NEUTRAL'} — ${s.confidence}%
-          </div>
-        </div>
-      `).join('')}
-    </div>
-  `;
   
   container.innerHTML = `
-    <div class="signal-card ${dirClass}">
-      <div class="signal-direction ${dirClass}">${dirIcon} ${signal.direction}</div>
-      <div class="signal-pair-title">${signal.pair.name}</div>
-      <div class="signal-time">
-        ⏰ Entry: ${signal.entryTime} · ${signal.entryDate}
-      </div>
+    <div class="signal-card-premium ${dirClass}">
+      <div class="pair-name" style="font-size: 14px; margin-bottom: 5px; opacity: 0.7;">${signal.pair.name}</div>
+      <div class="direction-huge ${dirClass}">${signal.direction}</div>
+      <div class="confidence-bubble ${dirClass}">${signal.confidence}% Confidence</div>
       
-      <div class="signal-metrics">
-        <div class="metric-box">
-          <div class="metric-label">Confidence</div>
-          <div class="metric-value ${confClass}">${signal.confidence}%</div>
+      <div class="grid-details">
+        <div class="detail-item">
+          <div class="detail-label">Timeframe</div>
+          <div class="detail-value">${signal.timeframe}</div>
         </div>
-        <div class="metric-box">
-          <div class="metric-label">Strength</div>
-          <div class="metric-value ${confClass}">${signal.strength.toUpperCase()}</div>
+        <div class="detail-item">
+          <div class="detail-label">Expiry</div>
+          <div class="detail-value">${signal.expiry}</div>
         </div>
-        <div class="metric-box">
-          <div class="metric-label">Timeframe</div>
-          <div class="metric-value">${signal.timeframe}</div>
+        <div class="detail-item">
+          <div class="detail-label">Strength</div>
+          <div class="detail-value">${signal.strength.toUpperCase()}</div>
         </div>
-        <div class="metric-box">
-          <div class="metric-label">Expiry</div>
-          <div class="metric-value">${signal.expiry}</div>
+        <div class="detail-item">
+          <div class="detail-label">Entry</div>
+          <div class="detail-value">${signal.entryTime}</div>
         </div>
       </div>
-      
-      <div class="confidence-bar-container">
-        <div class="confidence-bar-label">
-          <span>Signal Strength</span>
-          <span>${signal.confidence}%</span>
-        </div>
-        <div class="confidence-bar">
-          <div class="confidence-bar-fill ${confClass}" style="width: ${signal.confidence}%"></div>
-        </div>
-      </div>
-      
-      ${patternsHTML}
-      ${strategiesHTML}
     </div>
   `;
 }
@@ -1025,29 +989,35 @@ function renderAnalysis(signal) {
 }
 
 function renderHistory() {
-  const table = document.getElementById('history-table');
+  const container = document.getElementById('history-list');
   const emptyEl = document.getElementById('empty-history');
-  const body = document.getElementById('history-body');
   
   if (signalHistory.length === 0) {
-    table.style.display = 'none';
-    emptyEl.style.display = 'flex';
+    emptyEl.style.display = 'block';
     return;
   }
   
   emptyEl.style.display = 'none';
-  table.style.display = 'table';
   
-  body.innerHTML = signalHistory.map(s => `
-    <tr>
-      <td style="font-weight:600; color: var(--text-primary);">${s.pair.name}</td>
-      <td><span class="history-dir ${s.direction.toLowerCase()}">${s.direction}</span></td>
-      <td style="font-family: 'JetBrains Mono', monospace; color: ${
-        s.confidence >= 75 ? 'var(--call-green)' : s.confidence >= 55 ? 'var(--warning)' : 'var(--put-red)'
-      };">${s.confidence}%</td>
-      <td style="font-family: 'JetBrains Mono', monospace;">${s.entryTime}</td>
-    </tr>
-  `).join('');
+  // Clear any existing items except empty state
+  const items = container.querySelectorAll('.history-item');
+  items.forEach(item => item.remove());
+
+  signalHistory.forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.innerHTML = `
+      <div class="hist-left">
+        <div class="hist-pair">${s.pair.name}</div>
+        <div class="hist-time">${s.entryTime} · ${s.confidence}% Conf.</div>
+      </div>
+      <div class="hist-right">
+        <div class="hist-dir ${s.direction.toLowerCase()}">${s.direction}</div>
+        <div class="hist-time" style="font-size: 8px;">${s.timeframe} Exp.</div>
+      </div>
+    `;
+    container.appendChild(item);
+  });
 }
 
 // ===== Utility =====
